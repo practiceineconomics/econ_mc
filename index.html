@@ -1,126 +1,391 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DSE Econ MC 練習系統</title>
-    <!-- 引入 Supabase 官方 JavaScript SDK -->
+    <title>Practice in Economics | EconStudio</title>
+    <!-- Supabase Official JavaScript SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 30px auto; padding: 20px; background: #f4f6f8; color: #333; }
-        .card { background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        input, select, button { padding: 12px; margin: 8px 0; font-size: 16px; border-radius: 6px; box-sizing: border-box; }
-        input[type="text"], input[type="number"], select { border: 1px solid #ccc; width: 100%; background: white; }
-        label { font-weight: bold; margin-top: 10px; display: block; font-size: 14px; color: #444; }
-        button { background: #0070f3; color: white; border: none; cursor: pointer; font-weight: bold; width: 100%; }
-        button:hover { background: #0051a2; }
-        .btn-secondary { background: #6c757d; }
-        .btn-secondary:hover { background: #5a6268; }
-        .btn-warning { background: #e67e22; }
-        .btn-warning:hover { background: #d35400; }
-        .btn-danger { background: #dc3545; }
-        .btn-danger:hover { background: #bd2130; }
-        .hidden { display: none; }
-        .option-btn { display: block; width: 100%; text-align: left; background: #f8f9fa; color: #333; margin: 10px 0; border: 1px solid #ddd; transition: all 0.2s; }
-        .option-btn:hover { background: #e9ecef; }
-        .correct { background: #d4edda !important; border-color: #c3e6cb !important; color: #155724; }
-        .wrong { background: #f8d7da !important; border-color: #f5c6cb !important; color: #721c24; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background: #0070f3; color: white; }
+        /* EconStudio Premium Minimal Academic Style */
+        :root {
+            --primary: #0F5B3E; /* Forest Green */
+            --primary-hover: #0B452E;
+            --secondary: #E8F2ED; /* Sage Green */
+            --secondary-hover: #D6E8DF;
+            --background: #F8FAF9; /* Clean Warm White */
+            --card-bg: #FFFFFF;
+            --text-main: #2D3B36; /* Deep Charcoal */
+            --text-muted: #62756D; /* Quiet Slate */
+            --border: #E5ECE9; /* Subtle Border */
+            --correct: #28a745;
+            --wrong: #dc3545;
+        }
 
-        /* 課題勾選框區塊美化 */
-        .topic-container { border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-top: 6px; max-height: 180px; overflow-y: auto; background: #fafafa; }
-        .topic-item { display: flex; align-items: center; margin: 6px 0; cursor: pointer; }
-        .topic-item input[type="checkbox"] { width: 18px; height: 18px; margin: 0 10px 0 0; cursor: pointer; }
-        .topic-actions { display: flex; gap: 8px; margin-top: 6px; margin-bottom: 6px; }
-        .topic-actions button { width: auto; padding: 6px 12px; font-size: 13px; font-weight: normal; }
-        .topic-tag { display: inline-block; background: #e9ecef; color: #333; font-size: 12px; padding: 2px 6px; border-radius: 4px; margin: 2px; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; 
+            max-width: 900px; 
+            margin: 30px auto; 
+            padding: 20px; 
+            background-color: var(--background); 
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        /* Header Style */
+        .header-container {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        .logo-text {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .logo-sub {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* Modern Rounded Card */
+        .card { 
+            background: var(--card-bg); 
+            padding: 30px; 
+            border-radius: 16px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 6px 18px rgba(15, 91, 62, 0.02); 
+            margin-bottom: 25px; 
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(15, 91, 62, 0.04);
+        }
+
+        h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* Input & Select Styling */
+        input[type="text"], input[type="number"], select { 
+            width: 100%;
+            padding: 14px 16px; 
+            margin: 8px 0 16px 0; 
+            font-size: 15px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border);
+            background-color: #FAFCFB;
+            color: var(--text-main);
+            box-sizing: border-box; 
+            transition: all 0.2s ease;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: var(--card-bg);
+            box-shadow: 0 0 0 3px rgba(15, 91, 62, 0.1);
+        }
+
+        label { 
+            font-weight: 700; 
+            font-size: 14px; 
+            color: var(--text-main); 
+            display: block;
+            margin-top: 12px;
+        }
+
+        /* Buttons Styling */
+        button { 
+            background: var(--primary); 
+            color: #FFFFFF; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: 700; 
+            font-size: 16px;
+            padding: 14px 24px;
+            border-radius: 10px;
+            width: 100%; 
+            transition: all 0.2s ease;
+        }
+        button:hover { 
+            background: var(--primary-hover); 
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary { 
+            background: var(--secondary); 
+            color: var(--primary);
+        }
+        .btn-secondary:hover { 
+            background: var(--secondary-hover); 
+        }
+
+        .btn-warning { 
+            background: #FFF2E6; 
+            color: #D97706;
+            border: 1px solid #FDE6D2;
+        }
+        .btn-warning:hover { 
+            background: #FEEAD7; 
+        }
+
+        .btn-danger { 
+            background: #FEE2E2; 
+            color: #DC2626;
+        }
+        .btn-danger:hover { 
+            background: #FECACA; 
+        }
+
+        .hidden { display: none; }
+
+        /* Option Buttons */
+        .option-btn { 
+            display: block; 
+            width: 100%; 
+            text-align: left; 
+            background: #FAFCFB; 
+            color: var(--text-main); 
+            margin: 12px 0; 
+            padding: 16px 20px;
+            font-size: 15px;
+            border: 1px solid var(--border); 
+            border-radius: 10px;
+            transition: all 0.2s ease; 
+        }
+        .option-btn:hover { 
+            background: var(--secondary); 
+            border-color: #C3DAD0;
+        }
+
+        .correct { 
+            background: #DEF7EC !important; 
+            border-color: #85E1B5 !important; 
+            color: #03543F !important; 
+            font-weight: 700;
+        }
+        .wrong { 
+            background: #FDE8E8 !important; 
+            border-color: #F8B4B4 !important; 
+            color: #9B1C1C !important; 
+            font-weight: 700;
+        }
+
+        .badge-correct { color: var(--correct); font-weight: 700; }
+        .badge-wrong { color: var(--wrong); font-weight: 700; }
+
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+        th, td { padding: 14px 16px; text-align: left; font-size: 14px; }
+        th { background: #F0F4F2; color: var(--text-main); font-weight: 700; border-bottom: 2px solid var(--border); }
+        td { border-bottom: 1px solid var(--border); color: #4A5568; }
+        tr:last-child td { border-bottom: none; }
+
+        /* Checkboxes Container */
+        .topic-container { 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            padding: 16px; 
+            margin-top: 8px; 
+            max-height: 180px; 
+            overflow-y: auto; 
+            background: #FAFCFB; 
+        }
+        .topic-item { display: flex; align-items: center; margin: 8px 0; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .topic-item input[type="checkbox"] { width: 18px; height: 18px; margin: 0 12px 0 0; cursor: pointer; accent-color: var(--primary); }
+        .topic-actions { display: flex; gap: 8px; margin-top: 8px; margin-bottom: 8px; }
+        .topic-actions button { width: auto; padding: 8px 16px; font-size: 13px; font-weight: 600; }
+        .topic-tag { display: inline-block; background: var(--secondary); color: var(--primary); font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; margin: 2px; }
         
-        /* 老師後台按鈕列 */
-        .teacher-actions { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        /* Teacher Dashboard Panel */
+        .teacher-actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
         .teacher-actions button { width: auto; flex: 1; min-width: 150px; }
 
-        /* 即時題目解釋樣式 */
-        .explanation-box { background: #f8f9fa; border: 1px dashed #b0bec5; padding: 12px; border-radius: 6px; margin-top: 12px; font-size: 14px; color: #37474f; line-height: 1.6; text-align: left; }
+        /* Instant Explanation Box */
+        .explanation-box { 
+            background: #FAFCFB; 
+            border: 1px dashed #B8C7C1; 
+            padding: 16px; 
+            border-radius: 10px; 
+            margin-top: 15px; 
+            font-size: 14px; 
+            color: #3D4A41; 
+            line-height: 1.6; 
+            text-align: left; 
+        }
         
-        /* 檢討報告樣式 */
-        .report-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin: 15px 0; text-align: left; background: #fff; }
-        .report-card.card-correct { border-left: 6px solid #28a745; }
-        .report-card.card-wrong { border-left: 6px solid #dc3545; }
-        .filter-btn { padding: 6px 14px; font-size: 13px; width: auto; margin: 0 4px; display: inline-block; }
+        /* Report Cards */
+        .report-card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 16px 0; text-align: left; background: var(--card-bg); box-shadow: 0 2px 6px rgba(0,0,0,0.01); }
+        .report-card.card-correct { border-left: 6px solid var(--correct); }
+        .report-card.card-wrong { border-left: 6px solid var(--wrong); }
+        .filter-btn { padding: 8px 16px; font-size: 13px; width: auto; margin: 0 4px; display: inline-block; font-weight: 600; }
 
-        /* 題目插圖優化樣式 */
-        .quiz-image { display: block; max-width: 100%; max-height: 350px; height: auto; margin: 15px auto; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); background: white; }
+        /* Images Styling */
+        .quiz-image { display: block; max-width: 100%; max-height: 320px; height: auto; margin: 16px auto; border-radius: 10px; border: 1px solid var(--border); box-shadow: 0 4px 8px rgba(0,0,0,0.02); background: white; }
+
+        /* EconStudio Statistics Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Force exactly 2 columns for cleaner look */
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: left;
+            box-shadow: 0 4px 10px rgba(15, 91, 62, 0.01);
+        }
+        .stat-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-val {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 8px 0 4px 0;
+        }
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
     </style>
 </head>
 <body>
 
-    <h1 style="text-align: center; color: #0070f3;">DSE Econ MC 練習系統</h1>
-
-    <!-- 1. 系統連線初始化 -->
-    <div id="setup-card" class="card">
-        <h3>1. 系統連線狀態</h3>
-        <p style="color: #666; font-size: 14px;">點擊下方按鈕即可載入測驗系統：</p>
-        <button onclick="initSystem()" style="background: #28a745; font-size: 18px; padding: 15px;">進入練習系統 🚀</button>
+    <div class="header-container">
+        <h1 class="logo-text">📈 Practice in Economics</h1>
+        <div class="logo-sub">HKDSE Economics Learning Hub</div>
     </div>
 
-    <!-- 2. 學生填寫資料與選課題區塊 -->
+    <!-- 1. System Connection Initialization (Page 1) -->
+    <div id="setup-card" class="card" style="text-align: center;">
+        <h3>1. System Connection Status</h3>
+        <p>Click the button below to initialize the Economics MCQ Practice System:</p>
+        <button onclick="initSystem()" style="background: var(--primary); font-size: 18px; padding: 16px;">Enter Practice System 🚀</button>
+    </div>
+
+    <!-- 2. Student Login Section (Page 2) -->
     <div id="student-info-card" class="card hidden">
-        <h3>2. 請輸入學生資料及設定測驗</h3>
-        <p style="color: #666; font-size: 14px;">請填寫資料（姓名須為英文全名，學號須為純數字）：</p>
+        <h3>2. Student Login</h3>
+        <p>Before starting the quiz, please enter the following information:</p>
         
-        <input type="text" id="student-class" placeholder="班別 (例如: 6A)">
-        <input type="text" id="student-name" placeholder="英文姓名全名 (例如: Chan Tai Man)">
-        <input type="text" id="student-id" placeholder="學號 (純數字，例如: 15)">
+        <label for="student-class">Class Name:</label>
+        <input type="text" id="student-class" placeholder="e.g. 6A">
+        
+        <label for="student-name">English Full Name:</label>
+        <input type="text" id="student-name" placeholder="e.g. Chan Tai Man">
+        
+        <label for="student-id">Student ID (Class Number):</label>
+        <input type="text" id="student-id" placeholder="Numbers only, e.g. 15">
+        
+        <button onclick="loginStudent()" style="margin-top: 10px;">Next / Login ➔</button>
+    </div>
+
+    <!-- 3. Student Learning Hub (Page 3) -->
+    <div id="student-hub-card" class="card hidden">
+        <h2 style="font-size: 24px; font-weight: 800; margin-top: 0; margin-bottom: 8px;">Your next step starts here.</h2>
+        <p style="margin-bottom: 25px;">Choose your topics, practise at your own pace, and make every question count.</p>
+
+        <!-- EconStudio Stats Panel (Only Completion & Average Rate cards) -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Your Completion</div>
+                <div id="stat-student-completion" class="stat-val">0 Qs</div>
+                <div class="stat-sub">history cumulative questions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Average Rate</div>
+                <div id="stat-student-rate" class="stat-val">—</div>
+                <div class="stat-sub">historical average score</div>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 25px 0;">
+
+        <h3>3. Configure Your Practice</h3>
         
         <div id="standard-quiz-settings">
-            <label>選擇練習課題（可複選多個）：</label>
+            <label>Select Topics to Practice (Multiple Choice):</label>
             <div class="topic-actions">
-                <button type="button" class="btn-secondary" onclick="toggleAllTopics(true)">全部勾選</button>
-                <button type="button" class="btn-secondary" onclick="toggleAllTopics(false)">取消全選</button>
+                <button type="button" class="btn-secondary" onclick="toggleAllTopics(true)">Select All</button>
+                <button type="button" class="btn-secondary" onclick="toggleAllTopics(false)">Deselect All</button>
             </div>
             <div id="topic-checkboxes" class="topic-container">
-                <p style="color: #888; font-size: 13px;">正在載入課題中...</p>
+                <p style="color: var(--text-muted); font-size: 13px;">Loading topics from database...</p>
             </div>
 
-            <label for="quiz-limit">你想做多少題？ (自由輸入，最少 1 題，最多 50 題)：</label>
-            <input type="number" id="quiz-limit" min="1" max="50" value="10" placeholder="請輸入 1 - 50">
+            <label for="quiz-limit">How many questions would you like to practice? (Min: 1, Max: 50):</label>
+            <input type="number" id="quiz-limit" min="1" max="50" value="10" placeholder="e.g. 10">
 
-            <button onclick="startQuiz('STANDARD')" style="background: #28a745; margin-top: 15px;">開始常規練習 ➔</button>
+            <button onclick="startQuiz('STANDARD')" style="margin-top: 10px;">Start Regular Practice ➔</button>
         </div>
 
-        <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px;">
-            <p style="color: #e67e22; font-size: 13px; font-weight: bold; margin-bottom: 8px;">💡 想溫習之前做錯過的題目？</p>
-            <button onclick="startQuiz('MISTAKES')" class="btn-warning">🎯 進入個人錯題重溫 ➔</button>
+        <div style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 20px;">
+            <p style="color: #D97706; font-size: 13px; font-weight: bold; margin-bottom: 10px;">💡 Want to review questions you got wrong before?</p>
+            <button onclick="startQuiz('MISTAKES')" class="btn-warning">🎯 Enter Personal Mistake Review ➔</button>
+        </div>
+
+        <div style="margin-top: 15px;">
+            <button onclick="retakeQuiz(true)" class="btn-secondary" style="font-weight:600;">👤 Logout / Switch Account</button>
         </div>
     </div>
 
-    <!-- 3. 學生測驗區塊 -->
+    <!-- 4. Quiz Area Section (Page 4) -->
     <div id="quiz-card" class="card hidden">
-        <div id="user-display" style="margin-bottom: 15px; font-weight: bold; color: #555; background: #e9ecef; padding: 10px; border-radius: 6px; font-size: 14px;"></div>
+        <div id="user-display" style="margin-bottom: 15px; font-weight: bold; color: var(--primary); background: var(--secondary); padding: 12px 16px; border-radius: 8px;"></div>
         <div id="question-container"></div>
         
+        <!-- Instant feedback and explanation -->
         <p id="quiz-result" style="font-weight: bold; font-size: 18px; margin-top: 15px; text-align: center;"></p>
         <div id="instant-explanation" class="hidden"></div>
 
-        <button id="next-btn" class="hidden" style="margin-top: 15px;" onclick="loadNextQuestion()">下一題 ➔</button>
+        <button id="next-btn" class="hidden" style="margin-top: 20px;" onclick="loadNextQuestion()">Next Question ➔</button>
     </div>
 
-    <!-- 4. 老師後台區塊 -->
+    <!-- 5. Teacher Dashboard Panel (Page 5) -->
     <div id="teacher-card" class="card hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #e9ecef; padding: 10px; border-radius: 6px;">
-            <span style="font-weight: bold; color: #333;">👨‍🏫 當前身份: 老師後台</span>
-            <button onclick="location.reload()" style="background: #dc3545; width: auto; padding: 6px 12px; font-size: 14px;">登出/重設</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: var(--secondary); padding: 12px 16px; border-radius: 8px;">
+            <span style="font-weight: bold; color: var(--primary);">👨‍🏫 Current Identity: Teacher Dashboard</span>
+            <button onclick="location.reload()" class="btn-danger" style="width: auto; padding: 6px 12px; font-size: 14px;">Logout / Reset</button>
         </div>
-        <h3>全班學生成績總覽</h3>
+        <h3>All Student Performance Overview</h3>
         
         <div class="teacher-actions">
-            <button onclick="loadSubmissions()" style="background: #17a2b8;">重新整理成績列表 🔄</button>
-            <button onclick="exportToCSV()" style="background: #28a745;">導出 CSV 報表 (Excel) 📊</button>
+            <button onclick="loadSubmissions()" style="background: #17a2b8;">Refresh List 🔄</button>
+            <button onclick="exportToCSV()" style="background: var(--primary);">Export CSV Report (Excel) 📊</button>
+            <button onclick="archiveAndResetYear()" style="background: #C53030;">📦 Academic Year Reset: Backup & Clear All Submissions</button>
         </div>
 
-        <div id="submissions-container" style="margin-top: 15px; overflow-x: auto;"></div>
+        <div id="submissions-container" style="margin-top: 20px; overflow-x: auto;"></div>
     </div>
 
     <script>
@@ -134,6 +399,7 @@
         let quizMode = 'STANDARD';
         let loadedSubmissionsData = [];
         let userRecords = [];
+        let currentShuffledOptions = [];
 
         const supabaseUrl = "https://uysideoicvijsqtgtpll.supabase.co";
         const supabaseKey = "sb_publishable_jHOVhUBhspa4EgGZOxRaVg_2gImQsAS";
@@ -141,7 +407,7 @@
         async function initSystem() {
             try {
                 if (!window.supabase) {
-                    alert('Supabase SDK 尚未載入完成！請檢查網絡或重新整理。');
+                    alert('Supabase SDK has not loaded yet! Please check your connection.');
                     return;
                 }
                 
@@ -151,7 +417,7 @@
                 document.getElementById('setup-card').classList.add('hidden');
                 document.getElementById('student-info-card').classList.remove('hidden');
             } catch (err) {
-                alert('系統初始化失敗，請檢查 API Key 或網絡設定：\n' + err.message);
+                alert('System initialization failed. Please check API settings:\n' + err.message);
                 console.error(err);
             }
         }
@@ -166,14 +432,14 @@
                 if (error) throw error;
 
                 if (!data || data.length === 0) {
-                    container.innerHTML = '<p style="color: #666; font-size: 13px;">目前資料庫中沒有題目。</p>';
+                    container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">No questions found in the database.</p>';
                     return;
                 }
 
                 const uniqueTopics = [...new Set(data.map(item => item.topic).filter(Boolean))];
                 
                 if (uniqueTopics.length === 0) {
-                    container.innerHTML = '<p style="color: #666; font-size: 13px;">題目已載入，但未有設定任何課題名稱。</p>';
+                    container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">No active topics discovered.</p>';
                     return;
                 }
 
@@ -188,7 +454,7 @@
                 });
                 container.innerHTML = html;
             } catch (fetchErr) {
-                alert('讀取題庫課題時出錯：\n' + fetchErr.message);
+                alert('Failed to load active topics:\n' + fetchErr.message);
                 throw fetchErr;
             }
         }
@@ -198,17 +464,18 @@
             checkboxes.forEach(cb => cb.checked = checkState);
         }
 
-        async function startQuiz(mode = 'STANDARD') {
-            quizMode = mode;
+        // Student Login Trigger
+        async function loginStudent() {
             const className = document.getElementById('student-class').value.trim();
             const name = document.getElementById('student-name').value.trim();
             const studentId = document.getElementById('student-id').value.trim();
 
             if (!className || !name || !studentId) {
-                alert('請完整填寫班別、姓名及學號！');
+                alert('Please complete all login fields!');
                 return;
             }
 
+            // Admin Passage
             if (className.toUpperCase() === 'TEACHER') {
                 document.getElementById('student-info-card').classList.add('hidden');
                 document.getElementById('teacher-card').classList.remove('hidden');
@@ -216,19 +483,70 @@
                 return;
             }
 
+            // Input Validation Rules
             const numericRegex = /^[0-9]+$/;
             if (!numericRegex.test(studentId)) {
-                alert('⚠️ 格式錯誤：學號必須為純數字（例如：15）！');
+                alert('⚠️ Form error: Student ID must contain numbers only (e.g. 15)!');
                 return;
             }
 
             const englishNameRegex = /^[A-Za-z\s\-'.]{2,}$/;
             if (!englishNameRegex.test(name)) {
-                alert('⚠️ 格式錯誤：姓名必須填寫英文全名（例如：Chan Tai Man）！');
+                alert('⚠️ Form error: Name must be in English full name format (e.g. Chan Tai Man)!');
                 return;
             }
 
             currentStudent = { className, name, studentId };
+
+            // 💾 AUTO-SAVE RESUME CHECK: Check if there's any unfinished local progress
+            const savedProgressKey = `quiz_progress_${className}_${studentId}`;
+            const savedProgress = localStorage.getItem(savedProgressKey);
+            
+            if (savedProgress) {
+                const progress = JSON.parse(savedProgress);
+                const resume = confirm(
+                    "📝 UNFINISHED QUIZ DETECTED!\n\n" +
+                    `Hi ${name}, you have an unfinished session with ${progress.questions.length} questions.\n` +
+                    "Would you like to resume where you left off?"
+                );
+                
+                if (resume) {
+                    // Restore State
+                    questions = progress.questions;
+                    currentIndex = progress.currentIndex;
+                    score = progress.score;
+                    userRecords = progress.userRecords;
+                    selectedTopics = progress.selectedTopics;
+                    questionLimit = progress.questionLimit;
+                    quizMode = progress.quizMode || 'STANDARD';
+
+                    // Direct routing to Quiz view
+                    document.getElementById('student-info-card').classList.add('hidden');
+                    document.getElementById('quiz-card').classList.remove('hidden');
+
+                    const topicSummary = selectedTopics.length > 2 
+                        ? selectedTopics[0] + " etc. (Total " + selectedTopics.length + " topics)" 
+                        : selectedTopics.join(', ');
+
+                    document.getElementById('user-display').innerText = `Student: ${className} ${name} (${studentId}) | Resumed Practice (${questionLimit} Qs) | Unit: ${topicSummary}`;
+                    showQuestion();
+                    return; // Skip normal Hub view routing
+                } else {
+                    // Clear progress if student wants to start fresh
+                    localStorage.removeItem(savedProgressKey);
+                }
+            }
+
+            // Load Student Historical Stats from Supabase
+            await refreshStudentHubStats();
+
+            // Routing to Hub Card
+            document.getElementById('student-info-card').classList.add('hidden');
+            document.getElementById('student-hub-card').classList.remove('hidden');
+        }
+
+        async function startQuiz(mode = 'STANDARD') {
+            quizMode = mode;
             userRecords = [];
 
             if (mode === 'STANDARD') {
@@ -236,11 +554,11 @@
                 questionLimit = parseInt(limitInput, 10);
 
                 if (isNaN(questionLimit) || questionLimit < 1) {
-                    alert('請輸入有效的題數（最少 1 題）！');
+                    alert('Please enter a valid number of questions!');
                     return;
                 }
                 if (questionLimit > 50) {
-                    alert('每次練習上限為 50 題。系統已自動為你調低至 50 題！');
+                    alert('Practice limit is 50 questions per session. Adjusted to 50!');
                     questionLimit = 50;
                     document.getElementById('quiz-limit').value = 50;
                 }
@@ -249,18 +567,18 @@
                 selectedTopics = Array.from(checkedBoxes).map(cb => cb.value);
 
                 if (selectedTopics.length === 0) {
-                    alert('請最少勾選一個練習課題！');
+                    alert('Please select at least one topic!');
                     return;
                 }
 
-                document.getElementById('student-info-card').classList.add('hidden');
+                document.getElementById('student-hub-card').classList.add('hidden');
                 document.getElementById('quiz-card').classList.remove('hidden');
 
                 const topicSummary = selectedTopics.length > 2 
-                    ? selectedTopics[0] + " 等共 " + selectedTopics.length + " 個課題" 
+                    ? selectedTopics[0] + " etc. (Total " + selectedTopics.length + " topics)" 
                     : selectedTopics.join(', ');
 
-                document.getElementById('user-display').innerText = `學生：${className} ${name} (${studentId}) | 模式：常規練習 (${questionLimit}題) | 單元：${topicSummary}`;
+                document.getElementById('user-display').innerText = `Student: ${currentStudent.className} ${currentStudent.name} (${currentStudent.studentId}) | Mode: Regular Practice (${questionLimit} Qs) | Unit: ${topicSummary}`;
 
                 loadStandardQuestions();
             } else if (mode === 'MISTAKES') {
@@ -275,12 +593,12 @@
                 .in('topic', selectedTopics);
 
             if (error) {
-                alert('載入題目失敗: ' + error.message);
+                alert('Failed to retrieve questions: ' + error.message);
             } else if (!data || data.length === 0) {
                 document.getElementById('question-container').innerHTML = `
                     <div style="text-align: center; padding: 20px;">
-                        <p>所選課題暫時沒有題目，請返回重新選擇課題。</p>
-                        <button onclick="retakeQuiz(false)" style="width: auto; padding: 10px 20px;">返回重新選擇</button>
+                        <p>No active questions found in selected topics.</p>
+                        <button onclick="retakeQuiz(false)" class="btn-secondary" style="width: auto; padding: 10px 20px;">Back to Selection</button>
                     </div>`;
             } else {
                 let shuffled = data.sort(() => Math.random() - 0.5);
@@ -290,6 +608,7 @@
                 score = 0;
                 userRecords = [];
                 showQuestion();
+                saveLocalProgress(); // Initialize auto-save progress
             }
         }
 
@@ -302,7 +621,7 @@
                 .order('created_at', { ascending: true });
 
             if (error) {
-                alert('讀取錯題記錄失敗: ' + error.message);
+                alert('Failed to fetch mistake logs: ' + error.message);
                 return;
             }
 
@@ -319,7 +638,7 @@
             }
 
             if (activeMistakes.size === 0) {
-                alert('🎉 太棒了！你的所有錯題都已經全部做對搞懂了，目前沒有需要重溫的錯題！');
+                alert("🎉 Congratulations! You don't have any recorded mistakes. Let's do some regular practice first!");
                 return;
             }
 
@@ -330,14 +649,14 @@
                 .in('id', wrongIdsArray);
 
             if (qError || !qData || qData.length === 0) {
-                alert('目前找不到對應的錯題內容，可能題目已被更新。');
+                alert('Mistake questions could not be retrieved.');
                 return;
             }
 
-            document.getElementById('student-info-card').classList.add('hidden');
+            document.getElementById('student-hub-card').classList.add('hidden');
             document.getElementById('quiz-card').classList.remove('hidden');
 
-            document.getElementById('user-display').innerText = `學生：${currentStudent.className} ${currentStudent.name} (${currentStudent.studentId}) | 模式：🔥 個人錯題重溫 (剩餘 ${qData.length} 題未清零)`;
+            document.getElementById('user-display').innerText = `Student: ${currentStudent.className} ${currentStudent.name} (${currentStudent.studentId}) | Mode: 🔥 Personal Mistake Review (${qData.length} Qs remaining)`;
 
             questions = qData.sort(() => Math.random() - 0.5);
             questionLimit = questions.length;
@@ -345,6 +664,7 @@
             score = 0;
             userRecords = [];
             showQuestion();
+            saveLocalProgress(); // Initialize auto-save progress
         }
 
         function showQuestion() {
@@ -360,38 +680,31 @@
             document.getElementById('next-btn').classList.add('hidden');
 
             const q = questions[currentIndex];
+            let html = `
+                <div style="display: flex; justify-content: space-between; color: var(--text-muted); font-size: 14px; margin-bottom: 8px;">
+                    <span><b>Question ${currentIndex + 1} / ${questions.length}</b></span>
+                    <span style="background: var(--secondary); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--primary);">Topic: ${q.topic || 'General'}</span>
+                </div>
+            `;
+            html += `<p style="font-size: 18px; margin-bottom: 20px; line-height: 1.5; color: var(--text-main);"><b>${q.question}</b></p>`;
 
-            // 💡 關鍵升級：打亂選項順序並動態調整正確答案索引
-            // 1. 將選項包裝為包含原始索引的物件陣列，並清理舊的「A. / B. 」前綴
+            if (q.image_url && q.image_url.trim() !== "") {
+                html += `<img src="${q.image_url.trim()}" class="quiz-image" alt="Question Diagram">`;
+            }
+
+            // Shuffle Option Letters
+            const letters = ['A', 'B', 'C', 'D'];
             let rawOptions = q.options.map((opt, idx) => {
-                let cleanText = opt.replace(/^[A-D]\.\s*/i, ''); // 移除原有的 "A. " 或 "B. "
+                let cleanText = opt.replace(/^[A-D]\.\s*/i, '');
                 return { text: cleanText, originalIndex: idx };
             });
 
-            // 2. 隨機打亂選項順序 (Shuffle Options)
             let shuffledOptions = rawOptions.sort(() => Math.random() - 0.5);
+            const newCorrectIndex = shuffledOptions.findIndex(item => item.originalIndex === q.answer);
 
-            // 3. 找出打亂後的新正確答案索引
-            const letters = ['A', 'B', 'C', 'D'];
-            let newCorrectIndex = shuffledOptions.findIndex(item => item.originalIndex === q.answer);
-
-            // 4. 保存打亂後的資訊到暫存物件，供判分與報告使用
             q.currentDisplayOptions = shuffledOptions.map((item, idx) => `${letters[idx]}. ${item.text}`);
             q.currentCorrectIndex = newCorrectIndex;
 
-            let html = `
-                <div style="display: flex; justify-content: space-between; color: #666; font-size: 14px; margin-bottom: 8px;">
-                    <span><b>第 ${currentIndex + 1} 題 / 共 ${questions.length} 題</b></span>
-                    <span style="background: #e9ecef; padding: 2px 8px; border-radius: 4px;">單元: ${q.topic || '通用'}</span>
-                </div>
-            `;
-            html += `<p style="font-size: 18px; margin-bottom: 20px; line-height: 1.5;"><b>${q.question}</b></p>`;
-
-            if (q.image_url && q.image_url.trim() !== "") {
-                html += `<img src="${q.image_url.trim()}" class="quiz-image" alt="題目插圖">`;
-            }
-
-            // 渲染打亂後的新選項
             q.currentDisplayOptions.forEach((optText, idx) => {
                 html += `<button class="option-btn" onclick="checkAnswer(${idx}, ${q.currentCorrectIndex})">${optText}</button>`;
             });
@@ -412,18 +725,16 @@
 
             if (isCorrect) {
                 score++;
-                document.getElementById('quiz-result').innerText = '答對了！ 🎉';
-                document.getElementById('quiz-result').style.color = '#28a745';
+                document.getElementById('quiz-result').innerHTML = '<span class="badge-correct">CORRECT! 🎉</span>';
             } else {
-                document.getElementById('quiz-result').innerText = '答錯了！ ❌';
-                document.getElementById('quiz-result').style.color = '#dc3545';
+                document.getElementById('quiz-result').innerHTML = '<span class="badge-wrong">INCORRECT! ❌</span>';
             }
 
-            const explanationText = q.explanation ? q.explanation : '本題暫無額外文字解釋。';
+            const explanationText = q.explanation ? q.explanation : 'No extra explanation provided for this question.';
             const explContainer = document.getElementById('instant-explanation');
             explContainer.innerHTML = `
                 <div class="explanation-box">
-                    <b>💡 題目解釋與概念：</b><br>
+                    <b style="color: var(--primary);">💡 Question Explanation:</b><br>
                     ${explanationText}
                 </div>
             `;
@@ -438,37 +749,64 @@
                 isCorrect: isCorrect
             });
 
+            saveLocalProgress(); // Update progress on answer submission
             document.getElementById('next-btn').classList.remove('hidden');
         }
 
         function loadNextQuestion() {
             currentIndex++;
             showQuestion();
+            saveLocalProgress(); // Update progress on next question
+        }
+
+        // 💾 SAVE PROGRESS TO LOCAL STORAGE
+        function saveLocalProgress() {
+            if (!currentStudent || quizMode !== 'STANDARD') return;
+            const progress = {
+                questions: questions,
+                currentIndex: currentIndex,
+                score: score,
+                userRecords: userRecords,
+                selectedTopics: selectedTopics,
+                questionLimit: questionLimit,
+                quizMode: quizMode
+            };
+            localStorage.setItem(`quiz_progress_${currentStudent.className}_${currentStudent.studentId}`, JSON.stringify(progress));
+        }
+
+        // 💾 CLEAN UP LOCAL PROGRESS
+        function clearLocalProgress() {
+            if (currentStudent) {
+                localStorage.removeItem(`quiz_progress_${currentStudent.className}_${currentStudent.studentId}`);
+            }
         }
 
         function renderQuizCompletionReport() {
             const finalPct = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
             const wrongCount = questions.length - score;
 
+            // Clear local storage progress upon successful completion
+            clearLocalProgress();
+
             let reportHtml = `
                 <div style="text-align: center; padding: 10px 0;">
-                    <h2>🎉 測驗完成！</h2>
-                    <p style="font-size: 22px; margin: 10px 0;">
-                        你的得分：<b>${score} / ${questions.length}</b>（正確率：<b>${finalPct}%</b>）
+                    <h2 style="font-size: 26px; color: var(--primary); font-weight: 800; margin-bottom: 8px;">🎉 Session Completed!</h2>
+                    <p style="font-size: 20px; margin: 10px 0; color: var(--text-main);">
+                        Your Score: <b>${score} / ${questions.length}</b>（Correct Rate: <b>${finalPct}%</b>）
                     </p>
                     
-                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 25px;">
-                        <button onclick="retakeQuiz(false)" style="background: #28a745; width: auto; padding: 12px 24px;">🔄 再練一次 (保留學生資料)</button>
-                        <button onclick="retakeQuiz(true)" class="btn-secondary" style="width: auto; padding: 12px 24px;">👤 切換學生 / 登出</button>
+                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 25px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                        <button onclick="retakeQuiz(false)" style="background: var(--primary); flex: 1;">🔄 Practice Again (Same Student)</button>
+                        <button onclick="retakeQuiz(true)" class="btn-secondary" style="flex: 1;">👤 Logout / Switch Account</button>
                     </div>
 
-                    <hr style="border: 0; border-top: 1px solid #ddd; margin: 25px 0;">
+                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
                     
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
-                        <h3 style="margin: 0; color: #0070f3;">📝 個人答題檢討報告</h3>
+                        <h3 style="margin: 0; color: var(--primary); font-weight: 800;">📝 Personal Performance Report</h3>
                         <div>
-                            <button type="button" class="btn-secondary filter-btn" onclick="filterReport('ALL')">全部題目 (${questions.length})</button>
-                            <button type="button" style="background: #dc3545;" class="filter-btn" onclick="filterReport('WRONG')">只看錯題 (${wrongCount})</button>
+                            <button type="button" class="btn-secondary filter-btn" onclick="filterReport('ALL')">All Questions (${questions.length})</button>
+                            <button type="button" style="background: #FEE2E2; color: #DC2626;" class="filter-btn" onclick="filterReport('WRONG')">Wrong Questions Only (${wrongCount})</button>
                         </div>
                     </div>
                     
@@ -479,36 +817,36 @@
                 const q = item.questionData;
                 const statusClass = item.isCorrect ? 'card-correct' : 'card-wrong';
                 const statusTag = item.isCorrect 
-                    ? '<span style="color: #28a745; font-weight: bold;">✅ 答對</span>' 
-                    : '<span style="color: #dc3545; font-weight: bold;">❌ 答錯</span>';
+                    ? '<span class="badge-correct">✅ CORRECT</span>' 
+                    : '<span class="badge-wrong">❌ INCORRECT</span>';
                 
-                const yourAnsText = item.displayOptions[item.selectedIndex] || '未作答';
-                const correctAnsText = item.displayOptions[item.correctIndex] || '未知';
-                const explanationText = q.explanation ? q.explanation : '本題暫無額外文字解釋。';
+                const yourAnsText = item.displayOptions[item.selectedIndex] || 'Unanswered';
+                const correctAnsText = item.displayOptions[item.correctIndex] || 'Unknown';
+                const explanationText = q.explanation ? q.explanation : 'No extra explanation provided for this question.';
 
                 reportHtml += `
                     <div class="report-card ${statusClass}" data-is-correct="${item.isCorrect}">
-                        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #666; margin-bottom: 6px;">
-                            <span><b>第 ${item.questionNumber} 題</b> | 單元: ${q.topic || '通用'}</span>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">
+                            <span><b>Question ${item.questionNumber}</b> | Topic: ${q.topic || 'General'}</span>
                             <span>${statusTag}</span>
                         </div>
-                        <p style="font-weight: bold; font-size: 16px; margin: 8px 0 12px 0;">${q.question}</p>
+                        <p style="font-weight: bold; font-size: 16px; margin: 8px 0 12px 0; color: var(--text-main);">${q.question}</p>
                         
-                        ${q.image_url && q.image_url.trim() !== "" ? `<img src="${q.image_url.trim()}" class="quiz-image" style="max-height: 200px; margin: 10px 0;" alt="題目插圖">` : ''}
+                        ${q.image_url && q.image_url.trim() !== "" ? `<img src="${q.image_url.trim()}" class="quiz-image" style="max-height: 200px; margin: 10px auto;" alt="Question Diagram">` : ''}
 
                         <div style="font-size: 14px; margin: 6px 0;">
-                            <b>你的選擇：</b> 
-                            <span style="color: ${item.isCorrect ? '#28a745' : '#dc3545'}; font-weight: bold;">${yourAnsText}</span>
+                            <b>Your Choice:</b> 
+                            <span style="color: ${item.isCorrect ? 'var(--correct)' : 'var(--wrong)'}; font-weight: bold;">${yourAnsText}</span>
                         </div>
                         
                         ${!item.isCorrect ? `
                         <div style="font-size: 14px; margin: 6px 0;">
-                            <b>正確答案：</b> 
-                            <span style="color: #28a745; font-weight: bold;">${correctAnsText}</span>
+                            <b>Correct Answer:</b> 
+                            <span style="color: var(--correct); font-weight: bold;">${correctAnsText}</span>
                         </div>` : ''}
 
                         <div class="explanation-box">
-                            <b>💡 題目解釋與概念：</b><br>
+                            <b style="color: var(--primary);">💡 Explanation:</b><br>
                             ${explanationText}
                         </div>
                     </div>
@@ -536,14 +874,52 @@
         }
 
         function retakeQuiz(resetStudent) {
-            document.getElementById('quiz-card').classList.add('hidden');
-            document.getElementById('student-info-card').classList.remove('hidden');
-            
-            if (resetStudent) {
+            if (!resetStudent) {
+                document.getElementById('quiz-card').classList.add('hidden');
+                document.getElementById('student-hub-card').classList.remove('hidden');
+                refreshStudentHubStats();
+            } else {
+                document.getElementById('quiz-card').classList.add('hidden');
+                document.getElementById('student-hub-card').classList.add('hidden');
+                document.getElementById('student-info-card').classList.remove('hidden');
                 document.getElementById('student-class').value = '';
                 document.getElementById('student-name').value = '';
                 document.getElementById('student-id').value = '';
                 currentStudent = null;
+            }
+        }
+
+        // Fetch Cumulative Stats dynamically
+        async function refreshStudentHubStats() {
+            if (!currentStudent) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('submissions')
+                    .select('score, total')
+                    .eq('class_name', currentStudent.className)
+                    .eq('student_id', currentStudent.studentId);
+
+                if (error) throw error;
+
+                let cumulativeAttempted = 0;
+                let cumulativeScore = 0;
+
+                if (data && data.length > 0) {
+                    data.forEach(sub => {
+                        cumulativeAttempted += sub.total;
+                        cumulativeScore += sub.score;
+                    });
+
+                    const avgRate = cumulativeAttempted > 0 ? Math.round((cumulativeScore / cumulativeAttempted) * 100) : 0;
+
+                    document.getElementById('stat-student-completion').innerText = cumulativeAttempted + " Qs";
+                    document.getElementById('stat-student-rate').innerText = avgRate + "%";
+                } else {
+                    document.getElementById('stat-student-completion').innerText = "0 Qs";
+                    document.getElementById('stat-student-rate').innerText = "—";
+                }
+            } catch (err) {
+                console.error(err);
             }
         }
 
@@ -559,7 +935,7 @@
                     .map(r => r.questionData.id);
 
                 const topicLabel = quizMode === 'MISTAKES' 
-                    ? '錯題重溫' 
+                    ? 'Mistake Review' 
                     : selectedTopics.join(', ');
 
                 const payload = { 
@@ -579,14 +955,14 @@
 
                 if (error) throw error;
             } catch (err) {
-                alert('【儲存成績失敗】資料庫拒絕了儲存：\n' + err.message);
-                console.error('儲存成績詳細錯誤：', err);
+                alert('Database Error: Score could not be recorded:\n' + err.message);
+                console.error('Record saving failed:', err);
             }
         }
 
         async function loadSubmissions() {
             const container = document.getElementById('submissions-container');
-            container.innerHTML = '<p>正在載入成績...</p>';
+            container.innerHTML = '<p>Loading submissions...</p>';
 
             const { data, error } = await supabaseClient
                 .from('submissions')
@@ -594,40 +970,40 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                container.innerHTML = `<p style="color: red;">載入成績失敗: ${error.message}</p>`;
+                container.innerHTML = `<p style="color: red;">Load failed: ${error.message}</p>`;
             } else if (!data || data.length === 0) {
                 loadedSubmissionsData = [];
-                container.innerHTML = '<p>暫時沒有學生的提交記錄。</p>';
+                container.innerHTML = '<p>No records found.</p>';
             } else {
                 loadedSubmissionsData = data;
                 let html = `<table>
                     <thead>
                         <tr>
-                            <th>班別</th>
-                            <th>姓名</th>
-                            <th>學號</th>
-                            <th>練習課題</th>
-                            <th>得分</th>
-                            <th>總題數</th>
-                            <th>正確率</th>
-                            <th>提交時間</th>
-                            <th>操作</th>
+                            <th>Class</th>
+                            <th>Name</th>
+                            <th>ID</th>
+                            <th>Practiced Unit</th>
+                            <th>Score</th>
+                            <th>Total Qs</th>
+                            <th>Accuracy</th>
+                            <th>Submission Time</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>`;
 
                 data.forEach(sub => {
                     const timeStr = new Date(sub.created_at).toLocaleString();
-                    const topicsDisplay = (sub.topics || '未指定')
+                    const topicsDisplay = (sub.topics || 'Not specified')
                         .split(', ')
                         .map(t => `<span class="topic-tag">${t}</span>`)
                         .join('');
 
                     const pct = (sub.total && sub.total > 0) ? Math.round((sub.score / sub.total) * 100) : 0;
                     
-                    let pctColor = '#dc3545';
+                    let pctColor = 'var(--wrong)';
                     if (pct >= 70) {
-                        pctColor = '#28a745';
+                        pctColor = 'var(--correct)';
                     } else if (pct >= 50) {
                         pctColor = '#e67e22';
                     }
@@ -642,7 +1018,7 @@
                         <td><span style="font-weight: bold; color: ${pctColor};">${pct}%</span></td>
                         <td>${timeStr}</td>
                         <td>
-                            <button onclick="deleteSubmission('${sub.id}')" class="btn-danger" style="width: auto; padding: 4px 10px; font-size: 12px; margin: 0;">🗑️ 刪除</button>
+                            <button onclick="deleteSubmission('${sub.id}')" class="btn-danger" style="width: auto; padding: 6px 12px; font-size: 12px; margin: 0; font-weight:600;">🗑️ Delete</button>
                         </td>
                     </tr>`;
                 });
@@ -653,7 +1029,7 @@
         }
 
         async function deleteSubmission(submissionId) {
-            if (!confirm('⚠️ 確定要永久刪除此學生的這筆成績記錄嗎？刪除後無法復原。')) {
+            if (!confirm('⚠️ Are you sure you want to permanently delete this submission? This action is irreversible.')) {
                 return;
             }
 
@@ -665,21 +1041,21 @@
 
                 if (error) throw error;
 
-                alert('✅ 成績記錄已成功刪除！');
+                alert('✅ Submission deleted successfully!');
                 loadSubmissions();
             } catch (err) {
-                alert('刪除失敗，請檢查資料庫 DELETE 權限：\n' + err.message);
+                alert('Deletion failed. Please verify DELETE permissions:\n' + err.message);
                 console.error(err);
             }
         }
 
-        function exportToCSV() {
+        function exportToCSV(customFileName = null) {
             if (loadedSubmissionsData.length === 0) {
-                alert("目前沒有任何成績記錄可以導出！");
-                return;
+                alert("No submissions available to export!");
+                return false;
             }
 
-            const headers = ["班別", "姓名", "學號", "練習課題", "得分", "總題數", "正確率 (%)", "提交時間"];
+            const headers = ["Class", "Name", "ID", "Practiced Unit", "Score", "Total Qs", "Accuracy (%)", "Time"];
             
             const rows = loadedSubmissionsData.map(sub => {
                 const timeStr = new Date(sub.created_at).toLocaleString();
@@ -688,7 +1064,7 @@
                     sub.class_name || "",
                     sub.student_name || "",
                     sub.student_id || "",
-                    sub.topics || "未指定",
+                    sub.topics || "Not specified",
                     sub.score,
                     sub.total,
                     pctStr,
@@ -708,14 +1084,64 @@
             link.setAttribute("href", url);
             
             const dateStr = new Date().toISOString().slice(0, 10);
-            link.setAttribute("download", `DSE_Econ_成績報表_${dateStr}.csv`);
+            const fileName = customFileName || `DSE_Econ_Report_${dateStr}.csv`;
+            link.setAttribute("download", fileName);
             link.style.visibility = 'hidden';
             
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            return true;
+        }
+
+        async function archiveAndResetYear() {
+            if (loadedSubmissionsData.length === 0) {
+                alert("No submissions available to archive!");
+                return;
+            }
+
+            const confirmBackup = confirm(
+                "📦【Academic Year Archival & Reset】\n\n" +
+                "System will proceed with the following steps:\n" +
+                "1. Automatically download the full year's CSV score report.\n" +
+                "2. Permanently clear all submissions and mistake logs to reset for the new academic year.\n\n" +
+                "Start archival process now?"
+            );
+
+            if (!confirmBackup) return;
+
+            const dateStr = new Date().toISOString().slice(0, 10);
+            const backupSuccess = exportToCSV(`DSE_Econ_Archived_Report_${dateStr}.csv`);
+            if (!backupSuccess) return;
+
+            setTimeout(async () => {
+                const securityCheck = prompt(
+                    "⚠️【FINAL SAFETY VERIFICATION】\n\n" +
+                    "Archived backup downloaded successfully!\n" +
+                    "Are you sure you want to PERMANENTLY reset and clear all student records from the database?\n\n" +
+                    "To confirm, type the following word in UPPERCASE: RESET"
+                );
+
+                if (securityCheck === "RESET") {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('submissions')
+                            .delete()
+                            .neq('id', '00000000-0000-0000-0000-000000000000'); 
+
+                        if (error) throw error;
+
+                        alert("🎉 Year-end archival completed! Student logs have been successfully cleared. Ready for the new academic year!");
+                        loadSubmissions();
+                    } catch (err) {
+                        alert("Archival failed. Please check DELETE permissions:\n" + err.message);
+                        console.error(err);
+                    }
+                } else if (securityCheck !== null) {
+                    alert("❌ Incorrect verification keyword. Reset process aborted. All records are safe!");
+                }
+            }, 800);
         }
     </script>
 </body>
 </html>
-
