@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSE Econ MC 練習系統</title>
+    <!-- 引入 Supabase 官方 JavaScript SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 30px auto; padding: 20px; background: #f4f6f8; color: #333; }
+        .card { background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        input, select, button { padding: 12px; margin: 8px 0; font-size: 16px; border-radius: 6px; box-sizing: border-box; }
+        input[type="text"], input[type="number"], select { border: 1px solid #ccc; width: 100%; background: white; }
+        label { font-weight: bold; margin-top: 10px; display: block; font-size: 14px; color: #444; }
+        button { background: #0070f3; color: white; border: none; cursor: pointer; font-weight: bold; width: 100%; }
+        button:hover { background: #0051a2; }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-warning { background: #e67e22; }
+        .btn-warning:hover { background: #d35400; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #bd2130; }
+        .hidden { display: none; }
+        .option-btn { display: block; width: 100%; text-align: left; background: #f8f9fa; color: #333; margin: 10px 0; border: 1px solid #ddd; transition: all 0.2s; }
+        .option-btn:hover { background: #e9ecef; }
+        .correct { background: #d4edda !important; border-color: #c3e6cb !important; color: #155724; }
+        .wrong { background: #f8d7da !important; border-color: #f5c6cb !important; color: #721c24; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #0070f3; color: white; }
+
+        /* 課題勾選框區塊美化 */
+        .topic-container { border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-top: 6px; max-height: 180px; overflow-y: auto; background: #fafafa; }
+        .topic-item { display: flex; align-items: center; margin: 6px 0; cursor: pointer; }
+        .topic-item input[type="checkbox"] { width: 18px; height: 18px; margin: 0 10px 0 0; cursor: pointer; }
+        .topic-actions { display: flex; gap: 8px; margin-top: 6px; margin-bottom: 6px; }
+        .topic-actions button { width: auto; padding: 6px 12px; font-size: 13px; font-weight: normal; }
+        .topic-tag { display: inline-block; background: #e9ecef; color: #333; font-size: 12px; padding: 2px 6px; border-radius: 4px; margin: 2px; }
+        
+        /* 老師後台按鈕列 */
+        .teacher-actions { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .teacher-actions button { width: auto; flex: 1; min-width: 150px; }
+
+        /* 即時題目解釋樣式 */
+        .explanation-box { background: #f8f9fa; border: 1px dashed #b0bec5; padding: 12px; border-radius: 6px; margin-top: 12px; font-size: 14px; color: #37474f; line-height: 1.6; text-align: left; }
+        
+        /* 檢討報告樣式 */
+        .report-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin: 15px 0; text-align: left; background: #fff; }
+        .report-card.card-correct { border-left: 6px solid #28a745; }
+        .report-card.card-wrong { border-left: 6px solid #dc3545; }
+        .filter-btn { padding: 6px 14px; font-size: 13px; width: auto; margin: 0 4px; display: inline-block; }
+
+        /* 題目插圖優化樣式 */
+        .quiz-image { display: block; max-width: 100%; max-height: 350px; height: auto; margin: 15px auto; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); background: white; }
+    </style>
+</head>
+<body>
+
+    <h1 style="text-align: center; color: #0070f3;">DSE Econ MC 練習系統</h1>
+
+    <!-- 1. 系統連線初始化 -->
+    <div id="setup-card" class="card">
+        <h3>1. 系統連線狀態</h3>
+        <p style="color: #666; font-size: 14px;">點擊下方按鈕即可載入測驗系統：</p>
+        <button onclick="initSystem()" style="background: #28a745; font-size: 18px; padding: 15px;">進入練習系統 🚀</button>
+    </div>
+
+    <!-- 2. 學生填寫資料與選課題區塊 -->
+    <div id="student-info-card" class="card hidden">
+        <h3>2. 請輸入學生資料及設定測驗</h3>
+        <p style="color: #666; font-size: 14px;">請填寫資料（姓名須為英文全名，學號須為純數字）：</p>
+        
+        <input type="text" id="student-class" placeholder="班別 (例如: 6A)">
+        <input type="text" id="student-name" placeholder="英文姓名全名 (例如: Chan Tai Man)">
+        <input type="text" id="student-id" placeholder="學號 (純數字，例如: 15)">
+        
+        <div id="standard-quiz-settings">
+            <label>選擇練習課題（可複選多個）：</label>
+            <div class="topic-actions">
+                <button type="button" class="btn-secondary" onclick="toggleAllTopics(true)">全部勾選</button>
+                <button type="button" class="btn-secondary" onclick="toggleAllTopics(false)">取消全選</button>
+            </div>
+            <div id="topic-checkboxes" class="topic-container">
+                <p style="color: #888; font-size: 13px;">正在載入課題中...</p>
+            </div>
+
+            <label for="quiz-limit">你想做多少題？ (自由輸入，最少 1 題，最多 50 題)：</label>
+            <input type="number" id="quiz-limit" min="1" max="50" value="10" placeholder="請輸入 1 - 50">
+
+            <button onclick="startQuiz('STANDARD')" style="background: #28a745; margin-top: 15px;">開始常規練習 ➔</button>
+        </div>
+
+        <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px;">
+            <p style="color: #e67e22; font-size: 13px; font-weight: bold; margin-bottom: 8px;">💡 想溫習之前做錯過的題目？</p>
+            <button onclick="startQuiz('MISTAKES')" class="btn-warning">🎯 進入個人錯題重溫 ➔</button>
+        </div>
+    </div>
+
+    <!-- 3. 學生測驗區塊 -->
+    <div id="quiz-card" class="card hidden">
+        <div id="user-display" style="margin-bottom: 15px; font-weight: bold; color: #555; background: #e9ecef; padding: 10px; border-radius: 6px; font-size: 14px;"></div>
+        <div id="question-container"></div>
+        
+        <p id="quiz-result" style="font-weight: bold; font-size: 18px; margin-top: 15px; text-align: center;"></p>
+        <div id="instant-explanation" class="hidden"></div>
+
+        <button id="next-btn" class="hidden" style="margin-top: 15px;" onclick="loadNextQuestion()">下一題 ➔</button>
+    </div>
+
+    <!-- 4. 老師後台區塊 -->
+    <div id="teacher-card" class="card hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #e9ecef; padding: 10px; border-radius: 6px;">
+            <span style="font-weight: bold; color: #333;">👨‍🏫 當前身份: 老師後台</span>
+            <button onclick="location.reload()" style="background: #dc3545; width: auto; padding: 6px 12px; font-size: 14px;">登出/重設</button>
+        </div>
+        <h3>全班學生成績總覽</h3>
+        
+        <div class="teacher-actions">
+            <button onclick="loadSubmissions()" style="background: #17a2b8;">重新整理成績列表 🔄</button>
+            <button onclick="exportToCSV()" style="background: #28a745;">導出 CSV 報表 (Excel) 📊</button>
+        </div>
+
+        <div id="submissions-container" style="margin-top: 15px; overflow-x: auto;"></div>
+    </div>
+
+    <script>
+        let supabaseClient = null;
+        let currentStudent = null;
+        let selectedTopics = [];
+        let questionLimit = 10;
+        let questions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let quizMode = 'STANDARD';
+        let loadedSubmissionsData = [];
+        let userRecords = [];
+
+        const supabaseUrl = "https://uysideoicvijsqtgtpll.supabase.co";
+        const supabaseKey = "sb_publishable_jHOVhUBhspa4EgGZOxRaVg_2gImQsAS";
+
+        async function initSystem() {
+            try {
+                if (!window.supabase) {
+                    alert('Supabase SDK 尚未載入完成！請檢查網絡或重新整理。');
+                    return;
+                }
+                
+                supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+                await populateTopicCheckboxes();
+
+                document.getElementById('setup-card').classList.add('hidden');
+                document.getElementById('student-info-card').classList.remove('hidden');
+            } catch (err) {
+                alert('系統初始化失敗，請檢查 API Key 或網絡設定：\n' + err.message);
+                console.error(err);
+            }
+        }
+
+        async function populateTopicCheckboxes() {
+            const container = document.getElementById('topic-checkboxes');
+            try {
+                const { data, error } = await supabaseClient
+                    .from('questions')
+                    .select('topic');
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p style="color: #666; font-size: 13px;">目前資料庫中沒有題目。</p>';
+                    return;
+                }
+
+                const uniqueTopics = [...new Set(data.map(item => item.topic).filter(Boolean))];
+                
+                if (uniqueTopics.length === 0) {
+                    container.innerHTML = '<p style="color: #666; font-size: 13px;">題目已載入，但未有設定任何課題名稱。</p>';
+                    return;
+                }
+
+                let html = '';
+                uniqueTopics.forEach(topic => {
+                    html += `
+                        <label class="topic-item">
+                            <input type="checkbox" name="topic-cb" value="${topic}" checked>
+                            <span>${topic}</span>
+                        </label>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (fetchErr) {
+                alert('讀取題庫課題時出錯：\n' + fetchErr.message);
+                throw fetchErr;
+            }
+        }
+
+        function toggleAllTopics(checkState) {
+            const checkboxes = document.querySelectorAll('input[name="topic-cb"]');
+            checkboxes.forEach(cb => cb.checked = checkState);
+        }
+
+        async function startQuiz(mode = 'STANDARD') {
+            quizMode = mode;
+            const className = document.getElementById('student-class').value.trim();
+            const name = document.getElementById('student-name').value.trim();
+            const studentId = document.getElementById('student-id').value.trim();
+
+            if (!className || !name || !studentId) {
+                alert('請完整填寫班別、姓名及學號！');
+                return;
+            }
+
+            if (className.toUpperCase() === 'TEACHER') {
+                document.getElementById('student-info-card').classList.add('hidden');
+                document.getElementById('teacher-card').classList.remove('hidden');
+                loadSubmissions();
+                return;
+            }
+
+            const numericRegex = /^[0-9]+$/;
+            if (!numericRegex.test(studentId)) {
+                alert('⚠️ 格式錯誤：學號必須為純數字（例如：15）！');
+                return;
+            }
+
+            const englishNameRegex = /^[A-Za-z\s\-'.]{2,}$/;
+            if (!englishNameRegex.test(name)) {
+                alert('⚠️ 格式錯誤：姓名必須填寫英文全名（例如：Chan Tai Man）！');
+                return;
+            }
+
+            currentStudent = { className, name, studentId };
+            userRecords = [];
+
+            if (mode === 'STANDARD') {
+                const limitInput = document.getElementById('quiz-limit').value;
+                questionLimit = parseInt(limitInput, 10);
+
+                if (isNaN(questionLimit) || questionLimit < 1) {
+                    alert('請輸入有效的題數（最少 1 題）！');
+                    return;
+                }
+                if (questionLimit > 50) {
+                    alert('每次練習上限為 50 題。系統已自動為你調低至 50 題！');
+                    questionLimit = 50;
+                    document.getElementById('quiz-limit').value = 50;
+                }
+
+                const checkedBoxes = document.querySelectorAll('input[name="topic-cb"]:checked');
+                selectedTopics = Array.from(checkedBoxes).map(cb => cb.value);
+
+                if (selectedTopics.length === 0) {
+                    alert('請最少勾選一個練習課題！');
+                    return;
+                }
+
+                document.getElementById('student-info-card').classList.add('hidden');
+                document.getElementById('quiz-card').classList.remove('hidden');
+
+                const topicSummary = selectedTopics.length > 2 
+                    ? selectedTopics[0] + " 等共 " + selectedTopics.length + " 個課題" 
+                    : selectedTopics.join(', ');
+
+                document.getElementById('user-display').innerText = `學生：${className} ${name} (${studentId}) | 模式：常規練習 (${questionLimit}題) | 單元：${topicSummary}`;
+
+                loadStandardQuestions();
+            } else if (mode === 'MISTAKES') {
+                await loadMistakeQuestions();
+            }
+        }
+
+        async function loadStandardQuestions() {
+            const { data, error } = await supabaseClient
+                .from('questions')
+                .select('*')
+                .in('topic', selectedTopics);
+
+            if (error) {
+                alert('載入題目失敗: ' + error.message);
+            } else if (!data || data.length === 0) {
+                document.getElementById('question-container').innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <p>所選課題暫時沒有題目，請返回重新選擇課題。</p>
+                        <button onclick="retakeQuiz(false)" style="width: auto; padding: 10px 20px;">返回重新選擇</button>
+                    </div>`;
+            } else {
+                let shuffled = data.sort(() => Math.random() - 0.5);
+                questions = shuffled.slice(0, questionLimit);
+
+                currentIndex = 0;
+                score = 0;
+                userRecords = [];
+                showQuestion();
+            }
+        }
+
+        async function loadMistakeQuestions() {
+            const { data, error } = await supabaseClient
+                .from('submissions')
+                .select('wrong_question_ids, correct_question_ids, created_at')
+                .eq('class_name', currentStudent.className)
+                .eq('student_id', currentStudent.studentId)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                alert('讀取錯題記錄失敗: ' + error.message);
+                return;
+            }
+
+            const activeMistakes = new Set();
+            if (data && data.length > 0) {
+                data.forEach(row => {
+                    if (row.wrong_question_ids && Array.isArray(row.wrong_question_ids)) {
+                        row.wrong_question_ids.forEach(id => activeMistakes.add(id));
+                    }
+                    if (row.correct_question_ids && Array.isArray(row.correct_question_ids)) {
+                        row.correct_question_ids.forEach(id => activeMistakes.delete(id));
+                    }
+                });
+            }
+
+            if (activeMistakes.size === 0) {
+                alert('🎉 太棒了！你的所有錯題都已經全部做對搞懂了，目前沒有需要重溫的錯題！');
+                return;
+            }
+
+            const wrongIdsArray = Array.from(activeMistakes);
+            const { data: qData, error: qError } = await supabaseClient
+                .from('questions')
+                .select('*')
+                .in('id', wrongIdsArray);
+
+            if (qError || !qData || qData.length === 0) {
+                alert('目前找不到對應的錯題內容，可能題目已被更新。');
+                return;
+            }
+
+            document.getElementById('student-info-card').classList.add('hidden');
+            document.getElementById('quiz-card').classList.remove('hidden');
+
+            document.getElementById('user-display').innerText = `學生：${currentStudent.className} ${currentStudent.name} (${currentStudent.studentId}) | 模式：🔥 個人錯題重溫 (剩餘 ${qData.length} 題未清零)`;
+
+            questions = qData.sort(() => Math.random() - 0.5);
+            questionLimit = questions.length;
+            currentIndex = 0;
+            score = 0;
+            userRecords = [];
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentIndex >= questions.length) {
+                renderQuizCompletionReport();
+                saveSubmission();
+                return;
+            }
+
+            document.getElementById('quiz-result').innerText = '';
+            document.getElementById('instant-explanation').innerHTML = '';
+            document.getElementById('instant-explanation').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+
+            const q = questions[currentIndex];
+            let html = `
+                <div style="display: flex; justify-content: space-between; color: #666; font-size: 14px; margin-bottom: 8px;">
+                    <span><b>第 ${currentIndex + 1} 題 / 共 ${questions.length} 題</b></span>
+                    <span style="background: #e9ecef; padding: 2px 8px; border-radius: 4px;">單元: ${q.topic || '通用'}</span>
+                </div>
+            `;
+            html += `<p style="font-size: 18px; margin-bottom: 20px; line-height: 1.5;"><b>${q.question}</b></p>`;
+
+            // 💡 新增：若有圖片網址，則動態渲染插圖
+            if (q.image_url && q.image_url.trim() !== "") {
+                html += `<img src="${q.image_url.trim()}" class="quiz-image" alt="題目插圖">`;
+            }
+
+            q.options.forEach((opt, idx) => {
+                html += `<button class="option-btn" onclick="checkAnswer(${idx}, ${q.answer})">${opt}</button>`;
+            });
+
+            document.getElementById('question-container').innerHTML = html;
+        }
+
+        function checkAnswer(selected, correct) {
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (idx === correct) btn.classList.add('correct');
+                if (idx === selected && selected !== correct) btn.classList.add('wrong');
+            });
+
+            const isCorrect = (selected === correct);
+            const q = questions[currentIndex];
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('quiz-result').innerText = '答對了！ 🎉';
+                document.getElementById('quiz-result').style.color = '#28a745';
+            } else {
+                document.getElementById('quiz-result').innerText = '答錯了！ ⚖️';
+                document.getElementById('quiz-result').style.color = '#dc3545';
+            }
+
+            const explanationText = q.explanation ? q.explanation : '本題暫無額外文字解釋。';
+            const explContainer = document.getElementById('instant-explanation');
+            explContainer.innerHTML = `
+                <div class="explanation-box">
+                    <b>💡 題目解釋與概念：</b><br>
+                    ${explanationText}
+                </div>
+            `;
+            explContainer.classList.remove('hidden');
+
+            userRecords.push({
+                questionNumber: currentIndex + 1,
+                questionData: q,
+                selectedIndex: selected,
+                correctIndex: correct,
+                isCorrect: isCorrect
+            });
+
+            document.getElementById('next-btn').classList.remove('hidden');
+        }
+
+        function loadNextQuestion() {
+            currentIndex++;
+            showQuestion();
+        }
+
+        function renderQuizCompletionReport() {
+            const finalPct = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
+            const wrongCount = questions.length - score;
+
+            let reportHtml = `
+                <div style="text-align: center; padding: 10px 0;">
+                    <h2>🎉 測驗完成！</h2>
+                    <p style="font-size: 22px; margin: 10px 0;">
+                        你的得分：<b>${score} / ${questions.length}</b>（正確率：<b>${finalPct}%</b>）
+                    </p>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 25px;">
+                        <button onclick="retakeQuiz(false)" style="background: #28a745; width: auto; padding: 12px 24px;">🔄 再練一次 (保留學生資料)</button>
+                        <button onclick="retakeQuiz(true)" class="btn-secondary" style="width: auto; padding: 12px 24px;">👤 切換學生 / 登出</button>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid #ddd; margin: 25px 0;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                        <h3 style="margin: 0; color: #0070f3;">📝 個人答題檢討報告</h3>
+                        <div>
+                            <button type="button" class="btn-secondary filter-btn" onclick="filterReport('ALL')">全部題目 (${questions.length})</button>
+                            <button type="button" style="background: #dc3545;" class="filter-btn" onclick="filterReport('WRONG')">只看錯題 (${wrongCount})</button>
+                        </div>
+                    </div>
+                    
+                    <div id="report-items-container">
+            `;
+
+            userRecords.forEach((item) => {
+                const q = item.questionData;
+                const statusClass = item.isCorrect ? 'card-correct' : 'card-wrong';
+                const statusTag = item.isCorrect 
+                    ? '<span style="color: #28a745; font-weight: bold;">✅ 答對</span>' 
+                    : '<span style="color: #dc3545; font-weight: bold;">❌ 答錯</span>';
+                
+                const yourAnsText = q.options[item.selectedIndex] || '未作答';
+                const correctAnsText = q.options[item.correctIndex] || '未知';
+                const explanationText = q.explanation ? q.explanation : '本題暫無額外文字解釋。';
+
+                reportHtml += `
+                    <div class="report-card ${statusClass}" data-is-correct="${item.isCorrect}">
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #666; margin-bottom: 6px;">
+                            <span><b>第 ${item.questionNumber} 題</b> | 單元: ${q.topic || '通用'}</span>
+                            <span>${statusTag}</span>
+                        </div>
+                        <p style="font-weight: bold; font-size: 16px; margin: 8px 0 12px 0;">${q.question}</p>
+                        
+                        <!-- 💡 報告中同步支援顯示圖片 -->
+                        ${q.image_url && q.image_url.trim() !== "" ? `<img src="${q.image_url.trim()}" class="quiz-image" style="max-height: 200px; margin: 10px 0;" alt="題目插圖">` : ''}
+
+                        <div style="font-size: 14px; margin: 6px 0;">
+                            <b>你的選擇：</b> 
+                            <span style="color: ${item.isCorrect ? '#28a745' : '#dc3545'}; font-weight: bold;">${yourAnsText}</span>
+                        </div>
+                        
+                        ${!item.isCorrect ? `
+                        <div style="font-size: 14px; margin: 6px 0;">
+                            <b>正確答案：</b> 
+                            <span style="color: #28a745; font-weight: bold;">${correctAnsText}</span>
+                        </div>` : ''}
+
+                        <div class="explanation-box">
+                            <b>💡 題目解釋與概念：</b><br>
+                            ${explanationText}
+                        </div>
+                    </div>
+                `;
+            });
+
+            reportHtml += `</div></div>`;
+
+            document.getElementById('question-container').innerHTML = reportHtml;
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('quiz-result').innerText = '';
+            document.getElementById('instant-explanation').classList.add('hidden');
+        }
+
+        function filterReport(type) {
+            const cards = document.querySelectorAll('.report-card');
+            cards.forEach(card => {
+                const isCorrect = card.getAttribute('data-is-correct') === 'true';
+                if (type === 'WRONG') {
+                    card.style.display = isCorrect ? 'none' : 'block';
+                } else {
+                    card.style.display = 'block';
+                }
+            });
+        }
+
+        function retakeQuiz(resetStudent) {
+            document.getElementById('quiz-card').classList.add('hidden');
+            document.getElementById('student-info-card').classList.remove('hidden');
+            
+            if (resetStudent) {
+                document.getElementById('student-class').value = '';
+                document.getElementById('student-name').value = '';
+                document.getElementById('student-id').value = '';
+                currentStudent = null;
+            }
+        }
+
+        async function saveSubmission() {
+            if (!currentStudent) return;
+            try {
+                const wrongIds = userRecords
+                    .filter(r => !r.isCorrect && r.questionData.id)
+                    .map(r => r.questionData.id);
+
+                const correctIds = userRecords
+                    .filter(r => r.isCorrect && r.questionData.id)
+                    .map(r => r.questionData.id);
+
+                const topicLabel = quizMode === 'MISTAKES' 
+                    ? '錯題重溫' 
+                    : selectedTopics.join(', ');
+
+                const payload = { 
+                    class_name: currentStudent.className,
+                    student_name: currentStudent.name,
+                    student_id: currentStudent.studentId,
+                    score: score, 
+                    total: questions.length,
+                    topics: topicLabel,
+                    wrong_question_ids: wrongIds,
+                    correct_question_ids: correctIds
+                };
+                
+                const { error } = await supabaseClient
+                    .from('submissions')
+                    .insert([payload]);
+
+                if (error) throw error;
+            } catch (err) {
+                alert('【儲存成績失敗】資料庫拒絕了儲存：\n' + err.message);
+                console.error('儲存成績詳細錯誤：', err);
+            }
+        }
+
+        async function loadSubmissions() {
+            const container = document.getElementById('submissions-container');
+            container.innerHTML = '<p>正在載入成績...</p>';
+
+            const { data, error } = await supabaseClient
+                .from('submissions')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                container.innerHTML = `<p style="color: red;">載入成績失敗: ${error.message}</p>`;
+            } else if (!data || data.length === 0) {
+                loadedSubmissionsData = [];
+                container.innerHTML = '<p>暫時沒有學生的提交記錄。</p>';
+            } else {
+                loadedSubmissionsData = data;
+                let html = `<table>
+                    <thead>
+                        <tr>
+                            <th>班別</th>
+                            <th>姓名</th>
+                            <th>學號</th>
+                            <th>練習課題</th>
+                            <th>得分</th>
+                            <th>總題數</th>
+                            <th>正確率</th>
+                            <th>提交時間</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                data.forEach(sub => {
+                    const timeStr = new Date(sub.created_at).toLocaleString();
+                    const topicsDisplay = (sub.topics || '未指定')
+                        .split(', ')
+                        .map(t => `<span class="topic-tag">${t}</span>`)
+                        .join('');
+
+                    const pct = (sub.total && sub.total > 0) ? Math.round((sub.score / sub.total) * 100) : 0;
+                    
+                    let pctColor = '#dc3545';
+                    if (pct >= 70) {
+                        pctColor = '#28a745';
+                    } else if (pct >= 50) {
+                        pctColor = '#e67e22';
+                    }
+
+                    html += `<tr>
+                        <td>${sub.class_name || '-'}</td>
+                        <td>${sub.student_name || '-'}</td>
+                        <td>${sub.student_id || '-'}</td>
+                        <td>${topicsDisplay}</td>
+                        <td><b>${sub.score}</b></td>
+                        <td>${sub.total}</td>
+                        <td><span style="font-weight: bold; color: ${pctColor};">${pct}%</span></td>
+                        <td>${timeStr}</td>
+                        <td>
+                            <button onclick="deleteSubmission('${sub.id}')" class="btn-danger" style="width: auto; padding: 4px 10px; font-size: 12px; margin: 0;">🗑️ 刪除</button>
+                        </td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+            }
+        }
+
+        async function deleteSubmission(submissionId) {
+            if (!confirm('⚠️ 確定要永久刪除此學生的這筆成績記錄嗎？刪除後無法復原。')) {
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('submissions')
+                    .delete()
+                    .eq('id', submissionId);
+
+                if (error) throw error;
+
+                alert('✅ 成績記錄已成功刪除！');
+                loadSubmissions();
+            } catch (err) {
+                alert('刪除失敗，請檢查資料庫 DELETE 權限：\n' + err.message);
+                console.error(err);
+            }
+        }
+
+        function exportToCSV() {
+            if (loadedSubmissionsData.length === 0) {
+                alert("目前沒有任何成績記錄可以導出！");
+                return;
+            }
+
+            const headers = ["班別", "姓名", "學號", "練習課題", "得分", "總題數", "正確率 (%)", "提交時間"];
+            
+            const rows = loadedSubmissionsData.map(sub => {
+                const timeStr = new Date(sub.created_at).toLocaleString();
+                const pctStr = (sub.total && sub.total > 0) ? Math.round((sub.score / sub.total) * 100) + "%" : "0%";
+                return [
+                    sub.class_name || "",
+                    sub.student_name || "",
+                    sub.student_id || "",
+                    sub.topics || "未指定",
+                    sub.score,
+                    sub.total,
+                    pctStr,
+                    timeStr
+                ];
+            });
+
+            let csvContent = [
+                headers.join(","),
+                ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+            ].join("\n");
+
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            
+            const dateStr = new Date().toISOString().slice(0, 10);
+            link.setAttribute("download", `DSE_Econ_成績報表_${dateStr}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
+
