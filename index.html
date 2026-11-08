@@ -319,7 +319,7 @@
             }
 
             if (activeMistakes.size === 0) {
-                alert('🎉 太棒了！你的所有錯題都已經全部做對了，目前沒有需要重溫的錯題！');
+                alert('🎉 太棒了！你的所有錯題都已經全部做對搞懂了，目前沒有需要重溫的錯題！');
                 return;
             }
 
@@ -360,6 +360,25 @@
             document.getElementById('next-btn').classList.add('hidden');
 
             const q = questions[currentIndex];
+
+            // 💡 關鍵升級：打亂選項順序並動態調整正確答案索引
+            // 1. 將選項包裝為包含原始索引的物件陣列，並清理舊的「A. / B. 」前綴
+            let rawOptions = q.options.map((opt, idx) => {
+                let cleanText = opt.replace(/^[A-D]\.\s*/i, ''); // 移除原有的 "A. " 或 "B. "
+                return { text: cleanText, originalIndex: idx };
+            });
+
+            // 2. 隨機打亂選項順序 (Shuffle Options)
+            let shuffledOptions = rawOptions.sort(() => Math.random() - 0.5);
+
+            // 3. 找出打亂後的新正確答案索引
+            const letters = ['A', 'B', 'C', 'D'];
+            let newCorrectIndex = shuffledOptions.findIndex(item => item.originalIndex === q.answer);
+
+            // 4. 保存打亂後的資訊到暫存物件，供判分與報告使用
+            q.currentDisplayOptions = shuffledOptions.map((item, idx) => `${letters[idx]}. ${item.text}`);
+            q.currentCorrectIndex = newCorrectIndex;
+
             let html = `
                 <div style="display: flex; justify-content: space-between; color: #666; font-size: 14px; margin-bottom: 8px;">
                     <span><b>第 ${currentIndex + 1} 題 / 共 ${questions.length} 題</b></span>
@@ -368,13 +387,13 @@
             `;
             html += `<p style="font-size: 18px; margin-bottom: 20px; line-height: 1.5;"><b>${q.question}</b></p>`;
 
-            // 💡 新增：若有圖片網址，則動態渲染插圖
             if (q.image_url && q.image_url.trim() !== "") {
                 html += `<img src="${q.image_url.trim()}" class="quiz-image" alt="題目插圖">`;
             }
 
-            q.options.forEach((opt, idx) => {
-                html += `<button class="option-btn" onclick="checkAnswer(${idx}, ${q.answer})">${opt}</button>`;
+            // 渲染打亂後的新選項
+            q.currentDisplayOptions.forEach((optText, idx) => {
+                html += `<button class="option-btn" onclick="checkAnswer(${idx}, ${q.currentCorrectIndex})">${optText}</button>`;
             });
 
             document.getElementById('question-container').innerHTML = html;
@@ -396,7 +415,7 @@
                 document.getElementById('quiz-result').innerText = '答對了！ 🎉';
                 document.getElementById('quiz-result').style.color = '#28a745';
             } else {
-                document.getElementById('quiz-result').innerText = '答錯了！ ⚖️';
+                document.getElementById('quiz-result').innerText = '答錯了！ ❌';
                 document.getElementById('quiz-result').style.color = '#dc3545';
             }
 
@@ -413,6 +432,7 @@
             userRecords.push({
                 questionNumber: currentIndex + 1,
                 questionData: q,
+                displayOptions: q.currentDisplayOptions,
                 selectedIndex: selected,
                 correctIndex: correct,
                 isCorrect: isCorrect
@@ -462,8 +482,8 @@
                     ? '<span style="color: #28a745; font-weight: bold;">✅ 答對</span>' 
                     : '<span style="color: #dc3545; font-weight: bold;">❌ 答錯</span>';
                 
-                const yourAnsText = q.options[item.selectedIndex] || '未作答';
-                const correctAnsText = q.options[item.correctIndex] || '未知';
+                const yourAnsText = item.displayOptions[item.selectedIndex] || '未作答';
+                const correctAnsText = item.displayOptions[item.correctIndex] || '未知';
                 const explanationText = q.explanation ? q.explanation : '本題暫無額外文字解釋。';
 
                 reportHtml += `
@@ -474,7 +494,6 @@
                         </div>
                         <p style="font-weight: bold; font-size: 16px; margin: 8px 0 12px 0;">${q.question}</p>
                         
-                        <!-- 💡 報告中同步支援顯示圖片 -->
                         ${q.image_url && q.image_url.trim() !== "" ? `<img src="${q.image_url.trim()}" class="quiz-image" style="max-height: 200px; margin: 10px 0;" alt="題目插圖">` : ''}
 
                         <div style="font-size: 14px; margin: 6px 0;">
